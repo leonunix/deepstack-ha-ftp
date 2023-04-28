@@ -1,0 +1,9 @@
+{
+    "domain": "deep_stack_ha_ftp",
+    "name": "deepstack ha ftp plugin",
+    "documentation": "https://github.com/leonunix/devstack-ha-ftp",
+    "dependencies": [],
+    "version": "1.0.0",
+    "codeowners": ["@leonunix"],
+    "requirements": ["deepstack-sdk"]
+  }
