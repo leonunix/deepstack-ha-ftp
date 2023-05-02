@@ -4,6 +4,8 @@ from homeassistant.components.sensor import PLATFORM_SCHEMA
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 import os
+import time
+import datetime
 from ftplib import FTP
 from homeassistant.helpers.entity import Entity
 import logging
@@ -83,6 +85,12 @@ class DeepstackSensor(Entity):
 
     def update(self):
         self.searching()
+        self.delete_old_image()
+        
+    # Get now time like '20140108115958'
+    def _get_time(self):
+        return time.strftime("%Y%m%d%H%M%S", time.localtime(time.time()))
+
 
     def get_image_from_ftp(self) -> None:
         ftp = FTP() #初始化一个对象
@@ -116,21 +124,26 @@ class DeepstackSensor(Entity):
         for file in image_list:
             if ".jpg" in file:
                 image_byte = open(self._tmp_path + file, "rb").read()
+                save_image_path = self._save_file_folder + "deepstack_" + self._get_time() + ".jpg"
                 try:
-                    response = detection.detectObject(image_byte)
+                    response = detection.detectObject(image_byte, output=save_image_path)
                     _LOGGER.debug("Send image to deepstack: %s",file)
+                    detected = False
                     for obj in response:
                         needbreak = False
                         _LOGGER.debug("Name: {}, Confidence: {}, x_min: {}, y_min: {}, x_max: {}, y_max: {}".format(obj.label, obj.confidence, obj.x_min, obj.y_min, obj.x_max, obj.y_max))
                         for o in OBJECT_DETECTED:
                             if o in obj.label:
                                 # save image
-                                detection.detectObject(image_byte, output=self._save_file_folder + file)
                                 responses.append(response)
                                 needbeak=True
+                                detected = True
                                 break
                         if needbreak:
                             break
+                    if not detected:
+                        # delete saved image
+                        os.remove(save_image_path)   
                 except Exception as e:
                     _LOGGER.debug("Error: %s",e)
                     
@@ -139,6 +152,18 @@ class DeepstackSensor(Entity):
                 
         return responses
     
+    # delete image in _save_file_folder which is older than 7 day
+    # image name like 'deepstack_20140108115958.jpg'
+    def delete_old_image(self):
+        image_list = os.listdir(self._save_file_folder)
+        for file in image_list:
+            if ".jpg" in file and 'deepstack' in file:
+                file_time = file.split("_")[1].split(".")[0]
+                file_time = datetime.datetime.strptime(file_time, "%Y%m%d%H%M%S")
+                now_time = datetime.datetime.now()
+                if (now_time - file_time).days > 7:
+                    os.remove(self._save_file_folder + file)
+                    _LOGGER.info("Deleted old image: %s",file)
     
     def searching(self):
         self.get_image_from_ftp()

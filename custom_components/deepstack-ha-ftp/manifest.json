@@ -3,7 +3,11 @@
     "name": "deepstack ha ftp plugin",
     "documentation": "https://github.com/leonunix/devstack-ha-ftp",
     "dependencies": [],
-    "version": "1.0.0",
+    "version": "1.0.1",
     "codeowners": ["@leonunix"],
-    "requirements": ["deepstack-sdk"]
+    "requirements": [
+        "numpy", 
+        "opencv-python-headless==4.7.0.72",
+        "git+https://github.com/leonunix/DeepStackPython.git@dev#deepstack-sdk"
+      ]
   }
