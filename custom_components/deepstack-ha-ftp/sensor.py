@@ -61,7 +61,7 @@ class DeepstackSensor(Entity):
         self._ftp_path = ftp_path
         self._name = name
         self._state = False
-        self._attr = None
+        self._attr = {}
         self._tmp_path = tmp_path
         self._save_file_folder = save_file_folder
 
@@ -143,7 +143,10 @@ class DeepstackSensor(Entity):
                             break
                     if not detected:
                         # delete saved image
-                        os.remove(save_image_path)   
+                        os.remove(save_image_path)
+                    else:
+                        # set attr to file path
+                        self._attr['image'] = save_image_path
                 except Exception as e:
                     _LOGGER.debug("Error: %s",e)
                     
@@ -166,9 +169,9 @@ class DeepstackSensor(Entity):
                     _LOGGER.info("Deleted old image: %s",file)
     
     def searching(self):
+        self._attr['image'] = ''
         self.get_image_from_ftp()
         responses = self.send_image_to_deepstack()
-        self._attr = {}
         for o in OBJECT_DETECTED:
              self._attr[o] = 0
         if len(responses) > 0:
